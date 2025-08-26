@@ -1,5 +1,5 @@
 import torch.nn as nn
-from config import SEQ_LEN
+from src.config import SEQ_LEN
 
 class LSTMAutoencoder(nn.Module):
     def __init__(self, seq_len=SEQ_LEN, n_features=3, embedding_dim=128, num_layers=2):

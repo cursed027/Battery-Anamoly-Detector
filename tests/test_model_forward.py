@@ -1,22 +1,8 @@
 import numpy as np
 import torch
+from src.model import LSTMAutoencoder
+from src.errors import reconstruction_errors_and_recons  # type: ignore
 
-# Try modular import first, then fall back.
-try:
-    from src.models.lstm_autoencoder import LSTMAutoencoder  # type: ignore
-except Exception:
-    try:
-        from models.lstm_autoencoder import LSTMAutoencoder  # type: ignore
-    except Exception:
-        from unified_lstm_ae_pipeline import LSTMAutoencoder  # type: ignore
-
-try:
-    from src.evaluation.utils import reconstruction_errors_and_recons  # type: ignore
-except Exception:
-    try:
-        from evaluation.utils import reconstruction_errors_and_recons  # type: ignore
-    except Exception:
-        from unified_lstm_ae_pipeline import reconstruction_errors_and_recons  # type: ignore
 
 def test_model_forward_shapes_cpu():
     torch.manual_seed(0)

@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from config import FEATURES, TIME_COL, SEQ_LEN
+from src.config import FEATURES, TIME_COL, SEQ_LEN
 
 def clean_and_sort(df):
     cols = FEATURES + [TIME_COL, "battery_id", "cycle_count"]
