@@ -5,12 +5,12 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.preprocessing import StandardScaler
 
-from config import FEATURES, SEQ_LEN, BATCH_SIZE, ARTIFACTS_DIR, SCALER_PATH
-from data_utils import clean_and_sort, build_sequences, pick_normal_cycles
-from model import LSTMAutoencoder
-from train import train_model
-from evaluate import evaluate_model
-import visualize
+from src.config import FEATURES, SEQ_LEN, BATCH_SIZE, ARTIFACTS_DIR, SCALER_PATH
+from src.data_utils import clean_and_sort, build_sequences, pick_normal_cycles
+from src.model import LSTMAutoencoder
+from src.train import train_model
+from src.evaluate import evaluate_model
+from src.visualize import plot_losses,plot_latent_pca,plot_error_hist,plot_error_vs_cycle,plot_reconstruction
 
 def run_pipeline(train_csv, val_csv, test_csv, device_str=None):
     device = torch.device(device_str if device_str else ("cuda" if torch.cuda.is_available() else "cpu"))
@@ -51,11 +51,11 @@ def run_pipeline(train_csv, val_csv, test_csv, device_str=None):
         evaluate_model(model, X_va_tensor, X_te_tensor, device)
 
     # --- Visualize ---
-    visualize.plot_losses(train_losses, val_losses)
-    visualize.plot_reconstruction(X_te, test_recons, test_anom_mask, SEQ_LEN)
-    visualize.plot_error_hist(test_errors, thresh)
-    visualize.plot_error_vs_cycle(test_errors, test_anom_mask, thresh)
-    visualize.plot_latent_pca(test_embs, test_errors)
+    plot_losses(train_losses, val_losses)
+    plot_reconstruction(X_te, test_recons, test_anom_mask, SEQ_LEN)
+    plot_error_hist(test_errors, thresh)
+    plot_error_vs_cycle(test_errors, test_anom_mask, thresh)
+    plot_latent_pca(test_embs, test_errors)
 
     print("Pipeline finished. Artifacts saved to", ARTIFACTS_DIR)
 
