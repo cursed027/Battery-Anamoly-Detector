@@ -1,0 +1,4 @@
+[core]
+    remote = localremote
+['remote "localremote"']
+    url = C:\Users\27mil\OneDrive\Desktop\Battery Anamoly Detector\dvc_storage
