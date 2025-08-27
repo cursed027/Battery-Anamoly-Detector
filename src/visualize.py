@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
-from config import ARTIFACTS_DIR
+from src.config import ARTIFACTS_DIR
 
 def plot_losses(train_losses, val_losses):
     plt.figure(figsize=(6,4))
