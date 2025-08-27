@@ -60,4 +60,6 @@ def run_pipeline(train_csv, val_csv, test_csv, device_str=None):
     print("Pipeline finished. Artifacts saved to", ARTIFACTS_DIR)
 
 if __name__ == "__main__":
-    run_pipeline("datasets\train_dataset.csv", "datasets\val_dataset.csv", "datasets\test_dataset.csv")
+    run_pipeline(r"Battery-Anamoly-Detector\datasets\processed\train_dataset.csv", \
+                 r"Battery-Anamoly-Detector\datasets\processed\val_dataset.csv", \
+                 r"Battery-Anamoly-Detector\datasets\processed\test_dataset.csv")
