@@ -1,7 +1,7 @@
 import numpy as np
 import torch
-from errors import reconstruction_errors_and_recons
-from config import MODEL_PATH
+from src.errors import reconstruction_errors_and_recons
+from src.config import MODEL_PATH
 
 def evaluate_model(model, X_val_tensor, X_test_tensor, device):
     model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
