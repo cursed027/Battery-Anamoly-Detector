@@ -3,13 +3,12 @@ import torch
 from src.model import LSTMAutoencoder
 from src.errors import reconstruction_errors_and_recons  # type: ignore
 
-
 def test_model_forward_shapes_cpu():
     torch.manual_seed(0)
     B, T, F = 4, 20, 3
     model = LSTMAutoencoder(seq_len=T, n_features=F, embedding_dim=16, num_layers=1)
     x = torch.randn(B, T, F)
-    recon, emb = model(x)
+    recon, emb = model(x,return_embedding=True)
     assert recon.shape == x.shape
     assert emb.shape == (B, 16)
 
