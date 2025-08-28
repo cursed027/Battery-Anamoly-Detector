@@ -26,7 +26,6 @@ jobs:
         pip install pytest
 
     - name: Run tests
+      run: USE_MOCK_DATA=1 pytest -v
       env:
-        USE_MOCK_DATA: 1   # ✅ ensures tests don’t need full dataset
-      run: |
-        pytest -v
+        MLFLOW_TRACKING_URI: file:./mlruns
