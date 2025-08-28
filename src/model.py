@@ -15,10 +15,13 @@ class LSTMAutoencoder(nn.Module):
         )
         self.output_layer = nn.Linear(embedding_dim, n_features)
 
-    def forward(self, x):
+    def forward(self, x, return_embedding=False):
         _, (hidden, _) = self.encoder_lstm(x)
         hidden_last = hidden[-1]
         hidden_rep = hidden_last.unsqueeze(1).repeat(1, self.seq_len, 1)
         decoded, _ = self.decoder_lstm(hidden_rep)
         out = self.output_layer(decoded)
-        return out, hidden_last
+        if return_embedding:
+            return out, hidden_last
+        else:
+            return out 

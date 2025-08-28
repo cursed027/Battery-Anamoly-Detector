@@ -4,7 +4,8 @@ from src.errors import reconstruction_errors_and_recons
 from src.config import MODEL_PATH
 
 def evaluate_model(model, X_val_tensor, X_test_tensor, device):
-    model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+    model.load_state_dict(torch.load(MODEL_PATH, map_location=device, weights_only=True))
+
     model.to(device)
 
     val_errors, val_recons, val_embs = reconstruction_errors_and_recons(model, X_val_tensor, device)

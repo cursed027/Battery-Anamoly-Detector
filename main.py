@@ -1,3 +1,8 @@
+# import logging
+# logging.getLogger("mlflow").setLevel(logging.WARNING)
+# import warnings
+# warnings.filterwarnings("ignore", category=FutureWarning)
+
 import os, joblib
 import numpy as np
 import pandas as pd
@@ -7,12 +12,16 @@ from sklearn.preprocessing import StandardScaler
 import mlflow
 import mlflow.pytorch  # for saving torch models
 
-from src.config import FEATURES, SEQ_LEN, BATCH_SIZE, ARTIFACTS_DIR, SCALER_PATH, LR, EPOCHS, PATIENCE
+from src.config import FEATURES, SEQ_LEN, BATCH_SIZE, ARTIFACTS_DIR, SCALER_PATH, LR, EPOCHS, PATIENCE, EMBED_DIM, NUM_LAYERS
 from src.data_utils import clean_and_sort, build_sequences, pick_normal_cycles
 from src.model import LSTMAutoencoder
 from src.train import train_model
 from src.evaluate import evaluate_model
 from src.visualize import plot_losses, plot_latent_pca, plot_error_hist, plot_error_vs_cycle, plot_reconstruction
+
+# --- FIX: make sure MLflow logs locally ---
+mlflow.set_tracking_uri("file:/" + os.path.abspath("mlruns").replace("\\", "/"))
+mlflow.set_experiment("default")
 
 
 def run_pipeline(train_csv, val_csv, test_csv, device_str=None):
@@ -26,8 +35,8 @@ def run_pipeline(train_csv, val_csv, test_csv, device_str=None):
         mlflow.log_param("learning_rate", LR)
         mlflow.log_param("epochs", EPOCHS)
         mlflow.log_param("patience", PATIENCE)
-        mlflow.log_param("embedding_dim", 256)
-        mlflow.log_param("num_layers", 2)
+        mlflow.log_param("embedding_dim", 16)
+        mlflow.log_param("num_layers", 1)
 
         # --- Load CSVs ---
         train_raw = clean_and_sort(pd.read_csv(train_csv))
@@ -64,8 +73,8 @@ def run_pipeline(train_csv, val_csv, test_csv, device_str=None):
         model = LSTMAutoencoder(
             seq_len=SEQ_LEN,
             n_features=len(FEATURES),
-            embedding_dim=256,
-            num_layers=2
+            embedding_dim=EMBED_DIM,
+            num_layers=NUM_LAYERS
         ).to(device)
 
         # --- Train ---
@@ -97,14 +106,24 @@ def run_pipeline(train_csv, val_csv, test_csv, device_str=None):
             mlflow.log_artifact(os.path.join(ARTIFACTS_DIR, file))
 
         # --- Save model ---
-        mlflow.pytorch.log_model(model, "model")
+        # Prepare input example for MLflow (must NOT be torch.Tensor directly)
+        cpu_model = model.to("cpu")
+        example_input = torch.randn(BATCH_SIZE, SEQ_LEN, len(FEATURES), dtype=torch.float32)
+        example_input_np = example_input.numpy().astype(np.float32)  
+
+        mlflow.pytorch.log_model(
+            cpu_model,
+            name="BatteryLSTM",
+            input_example=example_input_np
+        )
+
 
         print("Pipeline finished. Artifacts and run tracked with MLflow.")
 
 
 if __name__ == "__main__":
     run_pipeline(
-        r"Battery-Anamoly-Detector\datasets\processed\train_dataset.csv",
-        r"Battery-Anamoly-Detector\datasets\processed\val_dataset.csv",
-        r"Battery-Anamoly-Detector\datasets\processed\test_dataset.csv"
+        r"C:\Users\27mil\OneDrive\Desktop\Battery Anamoly Detector\Battery-Anamoly-Detector\datasets\processed\train_dataset.csv", \
+        r"C:\Users\27mil\OneDrive\Desktop\Battery Anamoly Detector\Battery-Anamoly-Detector\datasets\processed\val_dataset.csv",\
+        r"C:\Users\27mil\OneDrive\Desktop\Battery Anamoly Detector\Battery-Anamoly-Detector\datasets\processed\test_dataset.csv"
     )

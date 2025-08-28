@@ -1,11 +1,11 @@
 FEATURES = ["Voltage_measured", "Current_measured", "Temperature_measured"]
 TIME_COL = "Time"
-SEQ_LEN = 10
+SEQ_LEN = 200
 
 # Training hyperparameters
-BATCH_SIZE = 1
+BATCH_SIZE = 32
 LR = 4e-4
-EPOCHS = 1
+EPOCHS = 50
 PATIENCE = 10
 EMBED_DIM = 256
 NUM_LAYERS = 2
