@@ -1,8 +1,3 @@
-# import logging
-# logging.getLogger("mlflow").setLevel(logging.WARNING)
-# import warnings
-# warnings.filterwarnings("ignore", category=FutureWarning)
-
 import os, joblib
 import numpy as np
 import pandas as pd
