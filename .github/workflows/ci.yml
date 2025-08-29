@@ -28,4 +28,4 @@ jobs:
     - name: Run tests
       run: USE_MOCK_DATA=1 pytest -v
       env:
-        MLFLOW_TRACKING_URI: file:./mlruns
+        MLFLOW_TRACKING_URI: file:///${{ github.workspace }}/mlruns
