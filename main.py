@@ -20,8 +20,10 @@ from src.evaluate import evaluate_model
 from src.visualize import plot_losses, plot_latent_pca, plot_error_hist, plot_error_vs_cycle, plot_reconstruction
 
 # --- FIX: make sure MLflow logs locally ---
-mlflow.set_tracking_uri("file:/" + os.path.abspath("mlruns").replace("\\", "/"))
+mlruns_path = os.path.abspath("mlruns").replace("\\", "/")
+mlflow.set_tracking_uri(f"file:///{mlruns_path.lstrip('/')}")
 mlflow.set_experiment("default")
+
 
 
 def run_pipeline(train_csv, val_csv, test_csv, device_str=None):
