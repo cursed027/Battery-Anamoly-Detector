@@ -11,7 +11,7 @@ from src.config import ARTIFACTS_DIR, MODEL_PATH, LR, EPOCHS, PATIENCE
 def train_model(model, train_loader, X_val_tensor, device):
     
     os.makedirs(ARTIFACTS_DIR, exist_ok=True)
-    criterion = nn.MSELoss()
+    criterion = nn.HuberLoss(delta=1.0)  # or nn.L1Loss()
     optimizer = optim.Adam(model.parameters(), lr=LR)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, factor=0.5)
 
@@ -26,7 +26,7 @@ def train_model(model, train_loader, X_val_tensor, device):
         "epochs": EPOCHS,
         "patience": PATIENCE,
         "optimizer": "Adam",
-        "loss_fn": "MSELoss"
+        "loss_fn": "HuberLoss"
     })
 
     for epoch in range(1, EPOCHS+1):

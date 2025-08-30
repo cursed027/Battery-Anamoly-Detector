@@ -82,21 +82,43 @@ def run_pipeline(train_csv, val_csv, test_csv, device_str=None):
         mlflow.log_metric("final_val_loss", val_losses[-1])
 
         # --- Evaluate ---
-        val_errors, val_recons, val_embs, test_errors, test_recons, test_embs, test_anom_mask, thresh = \
-            evaluate_model(model, X_va_tensor, X_te_tensor, device)
+        (
+            val_errors,
+            val_recons,
+            val_embs,
+            test_errors,
+            test_recons,
+            test_embs,
+            per_feature_mask,
+            raw_cycle_mask,
+            global_cycle_mask,
+            persisted_mask,
+            thresholds,
+            thresh_dict,
+            global_thr,
+        ) = evaluate_model(model, X_va_tensor, X_te_tensor, device, method="quantile", persistence=2)
 
-        # Log metrics
+        # --- Log metrics ---
         mlflow.log_metric("val_error_mean", float(np.mean(val_errors)))
         mlflow.log_metric("test_error_mean", float(np.mean(test_errors)))
-        mlflow.log_metric("anomaly_threshold", float(thresh))
-        mlflow.log_metric("test_anomaly_rate", float(test_anom_mask.mean()))
+
+        # Anomaly rates for different definitions
+        mlflow.log_metric("raw_anomaly_rate", float(raw_cycle_mask.mean()))
+        mlflow.log_metric("global_anomaly_rate", float(global_cycle_mask.mean()))
+        mlflow.log_metric("persisted_anomaly_rate", float(persisted_mask.mean()))
+
+        # Log thresholds
+        mlflow.log_metric("global_threshold", float(global_thr))
+        for feat, thr in thresh_dict.items():
+            mlflow.log_metric(f"feature_threshold_{feat}", thr)
 
         # --- Visualize ---
         plot_losses(train_losses, val_losses)
-        plot_reconstruction(X_te, test_recons, test_anom_mask, SEQ_LEN)
-        plot_error_hist(test_errors, thresh)
-        plot_error_vs_cycle(test_errors, test_anom_mask, thresh)
+        plot_reconstruction(X_te, test_recons, persisted_mask, SEQ_LEN)  # use persisted mask for plots
+        plot_error_hist(test_errors, thresholds)
+        plot_error_vs_cycle(test_errors, persisted_mask, thresholds)
         plot_latent_pca(test_embs, test_errors)
+
 
         # Log artifacts (plots, scaler, etc.)
         for file in os.listdir(ARTIFACTS_DIR):

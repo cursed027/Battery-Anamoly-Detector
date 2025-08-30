@@ -9,9 +9,14 @@ def reconstruction_errors_and_recons(model, X_tensor, device, batch_size=128):
     with torch.no_grad():
         for (xb,) in loader:
             xb = xb.to(device)
-            recon, emb = model(xb,return_embedding=True)
-            e = torch.mean((xb - recon)**2, dim=(1,2)).cpu().numpy()
+            recon, emb = model(xb, return_embedding=True)
+
+            # per-feature error instead of collapsing everything
+            e = ((xb - recon) ** 2).mean(dim=1).cpu().numpy()  
+            # shape: [batch, features]
+
             errors.append(e)
             recons_list.append(recon.cpu().numpy())
             embeds.append(emb.cpu().numpy())
+
     return np.concatenate(errors), np.concatenate(recons_list), np.concatenate(embeds)
