@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.preprocessing import StandardScaler
 import mlflow
 import mlflow.pytorch  # for saving torch models
-
+import json
 from src.config import FEATURES, SEQ_LEN, BATCH_SIZE, ARTIFACTS_DIR, SCALER_PATH, LR, EPOCHS, PATIENCE, EMBED_DIM, NUM_LAYERS
 from src.data_utils import clean_and_sort, build_sequences, pick_normal_cycles
 from src.model import LSTMAutoencoder
@@ -111,6 +111,20 @@ def run_pipeline(train_csv, val_csv, test_csv, device_str=None):
         mlflow.log_metric("global_threshold", float(global_thr))
         for feat, thr in thresh_dict.items():
             mlflow.log_metric(f"feature_threshold_{feat}", thr)
+
+        metrics= {"train_loss_final": float(train_losses[-1]),
+        "val_loss_final": float(val_losses[-1]),
+        "val_error_mean": float(np.mean(val_errors)),
+        "test_error_mean": float(np.mean(test_errors)),
+        "raw_anomaly_rate": float(raw_cycle_mask.mean()),
+        "global_anomaly_rate": float(global_cycle_mask.mean()),
+        "persisted_anomaly_rate": float(persisted_mask.mean()),
+        "global_threshold": float(global_thr),
+        "feature_thresholds": {feat: float(thr) for feat, thr in thresh_dict.items()}
+        }
+
+        with open(os.path.join(ARTIFACTS_DIR, "metrics.json"), "w") as f:
+            json.dump(metrics, f, indent=4)
 
         # --- Visualize ---
         plot_losses(train_losses, val_losses)

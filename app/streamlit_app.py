@@ -11,7 +11,7 @@ from src.config import FEATURES, SEQ_LEN, TIME_COL
 
 API_URL = "http://127.0.0.1:8000/predict"
 
-# --- Helper functions from your training pipeline ---
+# --- Helper functions ---
 def clean_and_sort(df):
     cols = FEATURES + [TIME_COL, "battery_id", "cycle_count"]
     return (df[cols]
@@ -57,29 +57,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# --- Header ---
 st.title("🔋 Battery Anomaly Detection")
-st.markdown(
-    """
-Upload your battery cycle CSV file (Sequence_Length x Features) or Manually input cycle values.
-The app will predict if the cycle shows an anomaly and visualize the reconstruction error.
-"""
-)
+st.markdown("Detect irregularities in battery cycles with smart reconstruction error analysis ⚡")
 
 # --- Sidebar ---
-st.sidebar.header("Input Options")
+st.sidebar.header("⚙️ Input Options")
 input_method = st.sidebar.radio("Select input method", ["Upload CSV", "Manual input"])
 st.sidebar.markdown(f"**Sequence Length:** {SEQ_LEN} | **Features:** {len(FEATURES)}")
 
-def predict_cycle(data):
-    payload = {"data": data.tolist()}
-    try:
-        res = requests.post(API_URL, json=payload, timeout=10)
-        return res.json()
-    except Exception as e:
-        return {"error": str(e)}
-
 # --- CSV Upload ---
-uploaded_file = st.file_uploader("Upload battery cycle CSV", type=["csv"])
+uploaded_file = st.file_uploader("📂 Upload battery cycle CSV", type=["csv"])
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     df_clean = clean_and_sort(df)
@@ -90,19 +78,51 @@ if uploaded_file is not None:
         res = predict_cycle(seq)
         all_results.append(res)
 
-    # Display results
+    # --- Compute summary metrics ---
+    valid_results = [r for r in all_results if "error" not in r]
+    if valid_results:
+        mse_vals = [r["mean_reconstruction_error"] for r in valid_results]
+        mae_vals = [np.mean([abs(err) for err in r["feature_errors"].values()]) for r in valid_results]
+        anomaly_flags = [int(r["global_anomaly"]) for r in valid_results]
+
+        summary = pd.DataFrame({
+            "Metric": ["MSE", "MAE", "Anomaly Rate (%)"],
+            "Value": [
+                np.mean(mse_vals),
+                np.mean(mae_vals),
+                100 * np.mean(anomaly_flags)
+            ]
+        })
+
+        st.subheader("📈 Model Effectiveness (Uploaded File)")
+        st.table(summary)
+
+        # Error vs Cycle (global)
+        error_curve = pd.DataFrame({
+            "Cycle": meta["cycle_count"],
+            "Mean Error": [r["mean_reconstruction_error"] for r in valid_results]
+        })
+        fig_curve = px.line(error_curve, x="Cycle", y="Mean Error", title="Error vs Cycle")
+        fig_curve.add_hline(
+            y=np.mean(list(valid_results[0]["feature_thresholds"].values())),
+            line_color="red", line_dash="dash", annotation_text="Threshold"
+        )
+        st.plotly_chart(fig_curve, use_container_width=True)
+
+    # --- Per-cycle details ---
     for i, res in enumerate(all_results):
         bid, cyc = meta.iloc[i]
         if "error" in res:
             st.error(f"{bid} cycle {cyc}: {res['error']}")
         else:
-            # Global anomaly decision
-            st.success(f"{bid} cycle {cyc} → Global Anomaly: {res['global_anomaly']}")
-            st.info(f"Mean Error: {res['mean_reconstruction_error']:.4f} | "
-                    f"Global Threshold: {res['global_threshold']:.4f}")
+            st.markdown(f"### 🔎 {bid} cycle {cyc}")
+            st.success(f"Global Anomaly: {res['global_anomaly']}")
+            st.info(f"Mean Error: {res['mean_reconstruction_error']:.4f} | Threshold: {res['global_threshold']:.4f}")
 
-            # Per-feature breakdown
-            st.subheader("🔎 Feature-wise anomaly check")
+            # Split tables and plots into columns
+            c1, c2 = st.columns(2)
+
+            # Feature-wise anomaly table
             feat_table = []
             for f in FEATURES:
                 feat_table.append({
@@ -111,48 +131,24 @@ if uploaded_file is not None:
                     "Threshold": res["feature_thresholds"][f],
                     "Anomaly": res["feature_anomalies"][f]
                 })
-            st.dataframe(pd.DataFrame(feat_table))
+            with c1:
+                st.markdown("🧩 Feature-wise Anomaly Check")
+                st.dataframe(pd.DataFrame(feat_table))
 
-            # --- 2. Original vs Reconstructed ---
-            # --- Display results in columns ---
-            if "reconstructed" in res:
-                recon = np.array(res["reconstructed"])
-                
-                # Create 4 columns
-                cols = st.columns(4)
-                
-                # 1. Input sequence plot
-                fig_input = px.line(
-                    X_seq[i],
-                    title=f"{bid} cycle {cyc} input",
-                    labels={"index": "Timestep", "value": "Feature Value"}
-                )
-                cols[0].plotly_chart(fig_input, use_container_width=True)
-                
-                # 2. Original vs Reconstructed
-                fig_recon = px.line(title=f"{bid} cycle {cyc} → Original vs Reconstructed")
-                for j, f in enumerate(FEATURES):
-                    fig_recon.add_scatter(y=X_seq[i][:, j], mode="lines", name=f"{f} (original)")
-                    fig_recon.add_scatter(y=recon[:, j], mode="lines", name=f"{f} (reconstructed)")
-                cols[1].plotly_chart(fig_recon, use_container_width=True)
-                
-                # 3. Error heatmap
-                error_matrix = (recon - X_seq[i]) ** 2
-                fig_error = px.imshow(
-                    error_matrix.T,
-                    aspect="auto",
-                    labels=dict(x="Timestep", y="Feature", color="Error"),
-                    y=FEATURES,
-                    title=f"{bid} cycle {cyc} → Error Heatmap"
-                )
-                cols[2].plotly_chart(fig_error, use_container_width=True)
-                
-                # 4. Error distribution
-                errors = np.mean(error_matrix, axis=1)
-                fig_dist = px.histogram(errors, nbins=30, title=f"{bid} cycle {cyc} → Error Distribution")
-                fig_dist.add_vline(x=res["global_threshold"], line_color="red", line_dash="dash", annotation_text="Threshold")
-                cols[3].plotly_chart(fig_dist, use_container_width=True)
-
+            # Feature-wise bar chart
+            feat_bar = pd.DataFrame({
+                "Feature": FEATURES,
+                "Error": [res["feature_errors"][f] for f in FEATURES],
+                "Threshold": [res["feature_thresholds"][f] for f in FEATURES]
+            })
+            fig_bar = px.bar(
+                feat_bar,
+                x="Feature", y="Error", color="Error",
+                title="Feature-wise Errors",
+                text="Threshold"
+            )
+            with c2:
+                st.plotly_chart(fig_bar, use_container_width=True)
 
 # --- Manual Input ---
 elif input_method == "Manual input":
@@ -166,16 +162,16 @@ elif input_method == "Manual input":
             row.append(val)
         manual_data.append(row)
 
-    if st.button("Predict Anomaly"):
+    if st.button("🚀 Run Prediction"):
         data_np = np.array(manual_data, dtype=np.float32)
         result = predict_cycle(data_np)
         if "error" in result:
             st.error(result["error"])
         else:
-            st.success(f"✅ Anomaly: {result['anomaly']}")
-            st.info(f"Reconstruction error: {result['reconstruction_error']:.4f} | Threshold: {result['anomaly_threshold']:.4f}")
+            st.success(f"Global Anomaly: {result['global_anomaly']}")
+            st.info(f"Reconstruction error: {result['mean_reconstruction_error']:.4f} | Threshold: {result['global_threshold']:.4f}")
             fig = px.line(data_np, title="Battery Cycle Input")
             st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
-st.caption("Made with ❤️ by Milan Kumar Singh")
+st.caption("Made with ⚡ by Milan Kumar Singh")

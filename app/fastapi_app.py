@@ -65,6 +65,10 @@ def predict_anomaly(input: CycleInput):
             for feat, err in zip(FEATURES, feat_errors)
         }
 
+        # Compute metrics
+        mse = float(np.mean(error_matrix))
+        mae = float(np.mean(np.abs(recon_np - x_scaled.squeeze(0))))
+
         return {
             "mean_reconstruction_error": float(mean_error),
             "global_threshold": float(global_thr),
@@ -72,7 +76,9 @@ def predict_anomaly(input: CycleInput):
             "feature_errors": dict(zip(FEATURES, feat_errors.tolist())),
             "feature_thresholds": thresholds,
             "feature_anomalies": feature_anoms,
-            "reconstructed": recon_np.tolist()
+            "reconstructed": recon_np.tolist(),
+            "mae":mae,
+            "mse":mse
         }
 
     except Exception as e:
