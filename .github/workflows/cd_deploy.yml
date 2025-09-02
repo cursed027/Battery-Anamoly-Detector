@@ -1,9 +1,13 @@
-name: CI/CD Pipeline
+name: Battery-Anamoly-Detector-CD
 
 on:
   push:
     branches:
-      - main   # Runs only when you push to main branch
+      - main
+    paths-ignore:
+      - "README.md"
+      - "LICENSE"
+      - "docs/**"
 
 jobs:
   build-and-deploy:
