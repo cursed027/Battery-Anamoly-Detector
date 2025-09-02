@@ -1,0 +1,66 @@
+# -------------------------------
+# Python cache / bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+
+# -------------------------------
+# Virtual environments
+.venv/
+venv/
+env/
+
+# -------------------------------
+# Logs & temp files
+*.log
+*.out
+*.err
+.DS_Store
+Thumbs.db
+
+# -------------------------------
+# Git
+.git/
+.gitignore
+
+# -------------------------------
+# Jupyter / notebooks
+.ipynb_checkpoints/
+notebooks/
+
+# -------------------------------
+# Data & artifacts (large, not needed)
+data/
+datasets/
+*.csv
+*.tsv
+
+# -------------------------------
+# MLflow / experiments
+mlruns/
+mlartifacts/
+
+# -------------------------------
+# IDE / editor configs
+.vscode/
+.idea/
+*.swp
+
+# -------------------------------
+# Models
+# Exclude everything by default
+*.pt
+*.pth
+*.pkl
+*.joblib
+*.h5
+
+# BUT keep the ones your API loads
+!src/config.py
+!artifacts/thresholds.pkl
+!artifacts/*.pkl
+!artifacts/*.pth
+!artifacts/*.pt
+!artifacts/*.joblib

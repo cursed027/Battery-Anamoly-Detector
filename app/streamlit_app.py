@@ -1,5 +1,6 @@
 # app/streamlit_app.py
-import sys, os
+import sys
+import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import streamlit as st
@@ -9,7 +10,7 @@ import requests
 import plotly.express as px
 from src.config import FEATURES, SEQ_LEN, TIME_COL
 
-API_URL = "http://127.0.0.1:8000/predict"
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/predict")
 
 # --- Helper functions ---
 def clean_and_sort(df):
