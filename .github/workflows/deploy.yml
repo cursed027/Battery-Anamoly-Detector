@@ -36,7 +36,10 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_KEY }}
         script: |
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/battery-anomaly-detector:latest
-          docker stop battery-app || true
-          docker rm battery-app || true
-          docker run -d -p 8000:8000 --name battery-app ${{ secrets.DOCKERHUB_USERNAME }}/battery-anomaly-detector:latest
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/battery-anomaly-detector:latest
+            docker stop battery-app || true
+            docker rm battery-app || true
+            docker run -d \
+              --name battery-app \
+              -p 8000:8000 -p 8501:8501 \
+              ${{ secrets.DOCKERHUB_USERNAME }}/battery-anomaly-detector:latest
